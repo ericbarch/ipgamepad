@@ -4,7 +4,7 @@
 ************************************/
 #include <SPI.h>
 #include <Ethernet.h>
-#include <Udp.h>
+#include <EthernetUdp.h>
 #include <Servo.h>
 
 //Set the MAC address, static IP, gateway, and subnet of the network
@@ -13,12 +13,17 @@ byte ip[]  = { 192, 168, 1, 22 };
 
 //UDP Stuff
 const int PORT = 4444;            //Port of incoming UDP data
+
 const int PACKET_SIZE = 8;        //Size of the joystick data packet
 byte joystick_data[PACKET_SIZE];  //Byte array for incoming data - [0] = leftY, [1] = leftX, [2] = rightY, [3] = rightX
 
 //Robot specific stuff
 boolean lastState = false;           //Keeps track of when we go between enabled/disabled or vice versa   
 unsigned long lastUpdate = 0;        //Keeps track of the last time (ms) we received data
+
+// An EthernetUDP instance to let us send and receive packets over UDP
+EthernetUDP Udp;
+
 
 //Define robot outputs
 int pwm01 = 5;  //Digital Pin 5
@@ -53,8 +58,10 @@ void loop() {
 /* This function's sole purpose is to receive data and shove it into the joystick_data byte array */
 void xferdata()
 {
-  if (Udp.available()) {
-    Udp.readPacket(joystick_data,PACKET_SIZE);
+  int packetSize = Udp.parsePacket();
+  if(packetSize)
+  {
+    Udp.read(joystick_data, PACKET_SIZE);
     lastUpdate = millis();
   }
 }
